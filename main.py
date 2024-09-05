@@ -4,19 +4,28 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from collections import defaultdict
 import re
+from sklearn.feature_extraction.text import TfidfVectorizer
 from statistics import mean
 
 # Function to fetch and parse webpage
 def fetch_and_parse(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    return soup
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return soup
+    except requests.RequestException as e:
+        st.error(f"Error fetching {url}: {e}")
+        return None
 
-# Function to extract keywords from content
-def extract_keywords(content):
-    # Use regex to find keywords (words or phrases) and filter out common words
-    phrases = re.findall(r'\b(?:[a-zA-Z]+ ){1,2}[a-zA-Z]+\b', content.lower())  # 1-3 words
-    return [phrase.strip() for phrase in phrases]
+# Function to extract keywords using TF-IDF
+def extract_keywords(content, num_keywords=10):
+    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))  # Unigrams and bigrams
+    X = vectorizer.fit_transform([content])
+    scores = X.sum(axis=0).A1
+    features = vectorizer.get_feature_names_out()
+    keywords = sorted(zip(features, scores), key=lambda x: x[1], reverse=True)
+    return [keyword for keyword, score in keywords[:num_keywords]]
 
 # Function to get internal links from a page
 def get_internal_links(soup, base_url):
@@ -26,18 +35,23 @@ def get_internal_links(soup, base_url):
         if href.startswith('/'):
             href = base_url + href
         if href.startswith(base_url):
-            links.append(href)
-    return links
+            links.append(href.split('#')[0])  # Remove fragments
+    return list(set(links))  # Remove duplicates
 
 # Function to analyze keyword cannibalization
 def analyze_cannibalization(url):
     base_url = url.split('/')[0] + '//' + url.split('/')[2]
     soup = fetch_and_parse(url)
+    if not soup:
+        return []
+
     internal_links = get_internal_links(soup, base_url)
     keywords_dict = defaultdict(lambda: {'count': 0, 'pages': defaultdict(lambda: {'count': 0, 'total_words': 0})})
     
     for link in internal_links:
         page_soup = fetch_and_parse(link)
+        if not page_soup:
+            continue
         page_content = page_soup.get_text()
         words = re.findall(r'\b\w+\b', page_content.lower())
         total_words = len(words)
