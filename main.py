@@ -57,9 +57,15 @@ def main():
                 content1 = fetch_content(url1)
                 content2 = fetch_content(url2)
                 
+                st.write("Content from URL 1 (first 500 chars):", content1[:500])
+                st.write("Content from URL 2 (first 500 chars):", content2[:500])
+                
                 # Extract keywords
                 keywords1 = extract_keywords(content1)
                 keywords2 = extract_keywords(content2)
+                
+                st.write("Keywords from URL 1:", keywords1)
+                st.write("Keywords from URL 2:", keywords2)
                 
                 # Analyze cannibalization
                 common_keywords = analyze_cannibalization(keywords1, keywords2)
