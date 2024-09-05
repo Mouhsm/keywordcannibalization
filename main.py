@@ -2,11 +2,11 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, ngrams
 from collections import Counter
 import nltk
 
-# Download NLTK stopwords if not already downloaded
+# Download NLTK resources if not already downloaded
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 
@@ -16,25 +16,30 @@ def fetch_content(url):
     soup = BeautifulSoup(response.text, 'html.parser')
     return soup.get_text()
 
-def extract_keywords(text, num_keywords=10):
-    """Extract keywords from text, ignoring common stop words."""
+def extract_keywords(text, num_keywords=10, n=3):
+    """Extract n-grams as keywords from text, ignoring common stop words."""
     # Tokenize and remove stop words
     stop_words = set(stopwords.words('english'))
     words = word_tokenize(text.lower())
     filtered_words = [word for word in words if word.isalnum() and word not in stop_words]
     
-    # Calculate word frequencies
-    word_freq = Counter(filtered_words)
+    # Extract n-grams
+    n_grams = ngrams(filtered_words, n)
+    n_gram_freq = Counter([' '.join(gram) for gram in n_grams])
     
-    # Get the most common keywords
-    return word_freq.most_common(num_keywords)
+    # Get the most common n-grams
+    return n_gram_freq.most_common(num_keywords)
 
 def analyze_cannibalization(keywords1, keywords2):
-    """Check for keyword cannibalization between two sets of keywords."""
-    keywords1_set = set(keyword for keyword, _ in keywords1)
-    keywords2_set = set(keyword for keyword, _ in keywords2)
+    """Check for keyword cannibalization between two sets of keywords, including frequencies."""
+    keywords1_dict = dict(keywords1)
+    keywords2_dict = dict(keywords2)
     
-    common_keywords = keywords1_set.intersection(keywords2_set)
+    common_keywords = {}
+    for keyword in keywords1_dict:
+        if keyword in keywords2_dict:
+            common_keywords[keyword] = (keywords1_dict[keyword], keywords2_dict[keyword])
+    
     return common_keywords
 
 def main():
@@ -59,7 +64,13 @@ def main():
                 common_keywords = analyze_cannibalization(keywords1, keywords2)
                 
                 # Display results
-                result_text = "Common Keywords:\n" + "\n".join(common_keywords)
+                if common_keywords:
+                    result_text = "Common Keywords:\n"
+                    for keyword, (count1, count2) in common_keywords.items():
+                        result_text += f"{keyword}: Found {count1} times in URL 1, {count2} times in URL 2\n"
+                else:
+                    result_text = "No common keywords found."
+                
                 st.text_area("Results", result_text, height=300)
                 
                 # Button to copy results
