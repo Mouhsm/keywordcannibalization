@@ -2,7 +2,8 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, ngrams
+from nltk.tokenize import word_tokenize
+from nltk.util import ngrams
 from collections import Counter
 import nltk
 
