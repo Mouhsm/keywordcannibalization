@@ -3,6 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 from collections import Counter
 import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+import nltk
+from nltk.corpus import stopwords
+
+nltk.download('stopwords')
 
 # Function to fetch and parse content from a URL
 def fetch_content(url):
@@ -17,21 +22,42 @@ def fetch_content(url):
         st.error(f"Error fetching URL: {e}")
         return ""
 
-# Function to extract main keywords based on density
+# Function to clean and preprocess text
+def preprocess_text(text):
+    # Convert to lowercase and remove non-alphabetic characters
+    text = text.lower()
+    text = re.sub(r'[^a-z\s]', '', text)
+    return text
+
+# Function to extract keywords using TF-IDF
 def extract_keywords(text):
-    # Convert text to lower case and remove non-alphabetic characters
-    words = re.findall(r'\b\w+\b', text.lower())
-    word_counts = Counter(words)
-    # Return the most common words
-    return [word for word, count in word_counts.most_common(20)]
+    stop_words = set(stopwords.words('english'))
+    text = preprocess_text(text)
+    
+    # Use TF-IDF to find important words
+    vectorizer = TfidfVectorizer(stop_words=stop_words, ngram_range=(1, 3))
+    X = vectorizer.fit_transform([text])
+    feature_names = vectorizer.get_feature_names_out()
+    scores = X.toarray()[0]
+    
+    # Combine feature names with their scores
+    keywords = sorted(zip(feature_names, scores), key=lambda x: -x[1])
+    
+    # Return top 20 keywords
+    return [keyword for keyword, score in keywords[:20]]
 
 # Function to check for keyword cannibalization
 def check_cannibalization(url1, url2):
     content1 = fetch_content(url1)
     content2 = fetch_content(url2)
+    
+    if not content1 or not content2:
+        return set()
+    
     keywords1 = set(extract_keywords(content1))
     keywords2 = set(extract_keywords(content2))
     cannibalized_keywords = keywords1.intersection(keywords2)
+    
     return cannibalized_keywords
 
 # Streamlit application
@@ -52,4 +78,3 @@ if st.button('Check Cannibalization'):
         st.download_button('Copy to Clipboard', result)
     else:
         st.error('Please enter both URLs.')
-
