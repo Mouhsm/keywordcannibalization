@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from collections import defaultdict
 import re
+from statistics import mean
 
 # Function to fetch and parse webpage
 def fetch_and_parse(url):
@@ -33,16 +34,23 @@ def analyze_cannibalization(url):
     base_url = url.split('/')[0] + '//' + url.split('/')[2]
     soup = fetch_and_parse(url)
     internal_links = get_internal_links(soup, base_url)
-    keywords_dict = defaultdict(lambda: {'count': 0, 'pages': set()})
+    keywords_dict = defaultdict(lambda: {'count': 0, 'pages': defaultdict(lambda: {'count': 0, 'total_words': 0})})
     
     for link in internal_links:
         page_soup = fetch_and_parse(link)
         page_content = page_soup.get_text()
-        keywords = extract_keywords(page_content)
+        words = re.findall(r'\b\w+\b', page_content.lower())
+        total_words = len(words)
+        page_keywords = extract_keywords(page_content)
         
-        for keyword in keywords:
-            keywords_dict[keyword]['count'] += 1
-            keywords_dict[keyword]['pages'].add(link)
+        for keyword in page_keywords:
+            if keyword in keywords_dict:
+                keywords_dict[keyword]['count'] += 1
+                keywords_dict[keyword]['pages'][link]['count'] += page_keywords.count(keyword)
+                keywords_dict[keyword]['pages'][link]['total_words'] = total_words
+            else:
+                keywords_dict[keyword]['count'] = 1
+                keywords_dict[keyword]['pages'][link] = {'count': page_keywords.count(keyword), 'total_words': total_words}
     
     # Filter out keywords that appear on only one page
     filtered_keywords = {
@@ -50,7 +58,13 @@ def analyze_cannibalization(url):
         if len(data['pages']) > 1
     }
     
-    # Sort keywords by their frequency
+    # Calculate keyword density and sort keywords by frequency
+    for keyword, data in filtered_keywords.items():
+        densities = [
+            (page_data['count'] / page_data['total_words']) * 100
+            for page_data in data['pages'].values()
+        ]
+        data['density'] = mean(densities) if densities else 0
     sorted_keywords = sorted(filtered_keywords.items(), key=lambda x: x[1]['count'], reverse=True)
     
     return sorted_keywords
@@ -64,9 +78,9 @@ if url:
     with st.spinner('Analyzing...'):
         cannibalization_data = analyze_cannibalization(url)
         # Convert data to DataFrame
-        data = [(keyword, data['count'], ', '.join(data['pages'])) for keyword, data in cannibalization_data]
+        data = [(keyword, data['count'], ', '.join(data['pages'].keys()), f"{data['density']:.2f}%") for keyword, data in cannibalization_data]
         if data:
-            df = pd.DataFrame(data, columns=['Keyword', 'Frequency', 'Pages'])
+            df = pd.DataFrame(data, columns=['Keyword', 'Frequency', 'Pages', 'Keyword Density'])
             st.dataframe(df)
         else:
             st.write("No cannibalization issues found.")
