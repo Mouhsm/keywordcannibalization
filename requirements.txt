@@ -1,4 +1,4 @@
-streamli
+streamlit
 requests
 beautifulsoup4
 pandas
