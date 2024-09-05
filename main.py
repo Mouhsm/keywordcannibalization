@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import nltk
 from nltk.corpus import stopwords
 
+# Download necessary NLTK data
 nltk.download('stopwords')
 
 # Function to fetch and parse content from a URL
@@ -52,6 +53,7 @@ def check_cannibalization(url1, url2):
     content2 = fetch_content(url2)
     
     if not content1 or not content2:
+        st.error("Failed to fetch content from one or both URLs.")
         return set()
     
     keywords1 = set(extract_keywords(content1))
@@ -73,8 +75,9 @@ if st.button('Check Cannibalization'):
         if cannibalized_keywords:
             result = f"Keywords from the first URL that exist in the second URL:\n{', '.join(cannibalized_keywords)}"
         else:
-            result = "No keyword cannibalization detected."
+            result = "No keyword cannibalization detected or unable to fetch content."
         st.text_area('Results', value=result, height=200)
         st.download_button('Copy to Clipboard', result)
     else:
         st.error('Please enter both URLs.')
+
