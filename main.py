@@ -7,7 +7,7 @@ from collections import Counter
 import nltk
 
 # Download NLTK stopwords if not already downloaded
-nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 
 def fetch_content(url):
