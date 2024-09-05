@@ -1,83 +1,79 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-from collections import Counter
-import re
-from sklearn.feature_extraction.text import TfidfVectorizer
-import nltk
 from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from collections import Counter
+import nltk
 
-# Download necessary NLTK data
+# Download NLTK stopwords if not already downloaded
+nltk.download('punkt')
 nltk.download('stopwords')
 
-# Function to fetch and parse content from a URL
 def fetch_content(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        # Extract text from all paragraphs
-        text = ' '.join(p.get_text() for p in soup.find_all('p'))
-        return text
-    except requests.RequestException as e:
-        st.error(f"Error fetching URL: {e}")
-        return ""
+    """Fetch the content of a web page and return the text."""
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    return soup.get_text()
 
-# Function to clean and preprocess text
-def preprocess_text(text):
-    # Convert to lowercase and remove non-alphabetic characters
-    text = text.lower()
-    text = re.sub(r'[^a-z\s]', '', text)
-    return text
-
-# Function to extract keywords using TF-IDF
-def extract_keywords(text):
+def extract_keywords(text, num_keywords=10):
+    """Extract keywords from text, ignoring common stop words."""
+    # Tokenize and remove stop words
     stop_words = set(stopwords.words('english'))
-    text = preprocess_text(text)
+    words = word_tokenize(text.lower())
+    filtered_words = [word for word in words if word.isalnum() and word not in stop_words]
     
-    # Use TF-IDF to find important words
-    vectorizer = TfidfVectorizer(stop_words=stop_words, ngram_range=(1, 3))
-    X = vectorizer.fit_transform([text])
-    feature_names = vectorizer.get_feature_names_out()
-    scores = X.toarray()[0]
+    # Calculate word frequencies
+    word_freq = Counter(filtered_words)
     
-    # Combine feature names with their scores
-    keywords = sorted(zip(feature_names, scores), key=lambda x: -x[1])
-    
-    # Return top 20 keywords
-    return [keyword for keyword, score in keywords[:20]]
+    # Get the most common keywords
+    return word_freq.most_common(num_keywords)
 
-# Function to check for keyword cannibalization
-def check_cannibalization(url1, url2):
-    content1 = fetch_content(url1)
-    content2 = fetch_content(url2)
+def analyze_cannibalization(keywords1, keywords2):
+    """Check for keyword cannibalization between two sets of keywords."""
+    keywords1_set = set(keyword for keyword, _ in keywords1)
+    keywords2_set = set(keyword for keyword, _ in keywords2)
     
-    if not content1 or not content2:
-        st.error("Failed to fetch content from one or both URLs.")
-        return set()
-    
-    keywords1 = set(extract_keywords(content1))
-    keywords2 = set(extract_keywords(content2))
-    cannibalized_keywords = keywords1.intersection(keywords2)
-    
-    return cannibalized_keywords
+    common_keywords = keywords1_set.intersection(keywords2_set)
+    return common_keywords
 
-# Streamlit application
-st.title('Keyword Cannibalization Checker')
+def main():
+    st.title("Keyword Cannibalization Analyzer")
 
-# Input fields for URLs
-url1 = st.text_input('Enter the first URL:')
-url2 = st.text_input('Enter the second URL:')
+    # User input for URLs
+    url1 = st.text_input("Enter the first URL:")
+    url2 = st.text_input("Enter the second URL:")
 
-if st.button('Check Cannibalization'):
-    if url1 and url2:
-        cannibalized_keywords = check_cannibalization(url1, url2)
-        if cannibalized_keywords:
-            result = f"Keywords from the first URL that exist in the second URL:\n{', '.join(cannibalized_keywords)}"
+    if st.button("Check Cannibalization"):
+        if url1 and url2:
+            try:
+                # Fetch and process content from both URLs
+                content1 = fetch_content(url1)
+                content2 = fetch_content(url2)
+                
+                # Extract keywords
+                keywords1 = extract_keywords(content1)
+                keywords2 = extract_keywords(content2)
+                
+                # Analyze cannibalization
+                common_keywords = analyze_cannibalization(keywords1, keywords2)
+                
+                # Display results
+                result_text = "Common Keywords:\n" + "\n".join(common_keywords)
+                st.text_area("Results", result_text, height=300)
+                
+                # Button to copy results
+                st.download_button(
+                    label="Copy Results to Clipboard",
+                    data=result_text,
+                    file_name="results.txt",
+                    mime="text/plain"
+                )
+                
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
         else:
-            result = "No keyword cannibalization detected or unable to fetch content."
-        st.text_area('Results', value=result, height=200)
-        st.download_button('Copy to Clipboard', result)
-    else:
-        st.error('Please enter both URLs.')
+            st.warning("Please enter both URLs.")
 
+if __name__ == "__main__":
+    main()
