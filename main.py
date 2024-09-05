@@ -47,10 +47,11 @@ def analyze_cannibalization(url1, url2):
     results = []
     
     for url in [url1, url2]:
+        base_url = base_url1 if url == url1 else base_url2
         soup = fetch_and_parse(url)
         if not soup:
             continue
-        internal_links = get_internal_links(soup, base_url1 if url == url1 else base_url2)
+        internal_links = get_internal_links(soup, base_url)
         keywords_dict = defaultdict(lambda: {'count': 0, 'pages': defaultdict(lambda: {'count': 0, 'total_words': 0})})
         
         for link in internal_links:
@@ -77,8 +78,6 @@ def analyze_cannibalization(url1, url2):
             if len(data['pages']) > 1
         }
         
-        # Calculate keyword density and sort keywords by frequency
-        for keyword, data in filtered
         # Calculate keyword density and sort keywords by frequency
         for keyword, data in filtered_keywords.items():
             densities = [
