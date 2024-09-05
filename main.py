@@ -5,13 +5,14 @@ import pandas as pd
 from collections import defaultdict
 import re
 from statistics import mean
+import nltk
+
+# Ensure necessary NLTK resources are downloaded
+nltk.download('punkt')
+nltk.download('stopwords')
+
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk import download
-
-# Ensure nltk resources are downloaded
-download('punkt')
-download('stopwords')
 
 # Function to fetch and parse webpage
 def fetch_and_parse(url):
