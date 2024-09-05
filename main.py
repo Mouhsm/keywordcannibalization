@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from collections import defaultdict, Counter
+from collections import defaultdict
 import re
 
 # Function to fetch and parse webpage
@@ -13,9 +13,9 @@ def fetch_and_parse(url):
 
 # Function to extract keywords from content
 def extract_keywords(content):
-    # Use regex to find words and filter out common words
-    words = re.findall(r'\b\w{4,}\b', content.lower())
-    return words
+    # Use regex to find keywords (words or phrases) and filter out common words
+    phrases = re.findall(r'\b(?:[a-zA-Z]+ ){1,2}[a-zA-Z]+\b', content.lower())  # 1-3 words
+    return [phrase.strip() for phrase in phrases]
 
 # Function to get internal links from a page
 def get_internal_links(soup, base_url):
@@ -33,7 +33,7 @@ def analyze_cannibalization(url):
     base_url = url.split('/')[0] + '//' + url.split('/')[2]
     soup = fetch_and_parse(url)
     internal_links = get_internal_links(soup, base_url)
-    keywords_dict = defaultdict(list)
+    keywords_dict = defaultdict(lambda: {'count': 0, 'pages': set()})
     
     for link in internal_links:
         page_soup = fetch_and_parse(link)
@@ -41,12 +41,19 @@ def analyze_cannibalization(url):
         keywords = extract_keywords(page_content)
         
         for keyword in keywords:
-            keywords_dict[keyword].append(link)
+            keywords_dict[keyword]['count'] += 1
+            keywords_dict[keyword]['pages'].add(link)
     
     # Filter out keywords that appear on only one page
-    filtered_keywords = {keyword: links for keyword, links in keywords_dict.items() if len(links) > 1}
+    filtered_keywords = {
+        keyword: data for keyword, data in keywords_dict.items()
+        if len(data['pages']) > 1
+    }
     
-    return filtered_keywords
+    # Sort keywords by their frequency
+    sorted_keywords = sorted(filtered_keywords.items(), key=lambda x: x[1]['count'], reverse=True)
+    
+    return sorted_keywords
 
 # Streamlit app
 st.title('Keyword Cannibalization Tool')
@@ -57,9 +64,9 @@ if url:
     with st.spinner('Analyzing...'):
         cannibalization_data = analyze_cannibalization(url)
         # Convert data to DataFrame
-        data = [(keyword, ', '.join(links)) for keyword, links in cannibalization_data.items()]
+        data = [(keyword, data['count'], ', '.join(data['pages'])) for keyword, data in cannibalization_data]
         if data:
-            df = pd.DataFrame(data, columns=['Keyword', 'Pages'])
+            df = pd.DataFrame(data, columns=['Keyword', 'Frequency', 'Pages'])
             st.dataframe(df)
         else:
             st.write("No cannibalization issues found.")
