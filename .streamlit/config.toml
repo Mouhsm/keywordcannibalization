@@ -1,6 +1,6 @@
 [theme]
-primaryColor = "#f63366"
-backgroundColor = "#262730"
-secondaryBackgroundColor = "#A5A5A5"
-textColor = "#FFFFFF"
+primaryColor = "#f63366"  # You can keep your primary color or change it if needed
+backgroundColor = "#f7f7f7"  # Light background color
+secondaryBackgroundColor = "#e0e0e0"  # Slightly darker shade for contrast
+textColor = "#333333"  # Darker text color for better readability
 font = "sans serif"
