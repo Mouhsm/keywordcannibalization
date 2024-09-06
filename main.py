@@ -52,9 +52,12 @@ def analyze_cannibalization(keywords1, keywords2):
 def main():
     st.title("Keyword Cannibalization Analyzer")
 
-    # Inject custom CSS to style and center the buttons
+    # Inject custom CSS to hide Streamlit menu and footer, and style the buttons
     st.markdown("""
         <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        
         .download-button {
             display: inline-block;
             background-color: #FFA500; /* Orange color */
@@ -134,3 +137,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
