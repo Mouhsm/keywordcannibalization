@@ -7,6 +7,7 @@ from nltk.util import ngrams
 from collections import Counter
 import nltk
 import pandas as pd
+import base64
 
 # Download NLTK resources if not already downloaded
 nltk.download('punkt')
@@ -51,11 +52,48 @@ def analyze_cannibalization(keywords1, keywords2):
 def main():
     st.title("Keyword Cannibalization Analyzer")
 
+    # Inject custom CSS to style and center the buttons
+    st.markdown("""
+        <style>
+        .download-button {
+            display: inline-block;
+            background-color: #FFA500; /* Orange color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            text-align: center;
+            text-decoration: none;
+        }
+        .download-button:hover {
+            background-color: #FF8C00; /* Darker orange color on hover */
+        }
+        .check-button {
+            background-color: #007BFF; /* Blue color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .check-button:hover {
+            background-color: #0056b3; /* Darker blue color on hover */
+        }
+        .center {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # User input for URLs
     url1 = st.text_input("Enter the first URL:")
     url2 = st.text_input("Enter the second URL:")
 
-    if st.button("Check Cannibalization"):
+    # Render the "Check Cannibalization" button with custom styling
+    if st.markdown('<button class="check-button" id="check-button">Check Cannibalization</button>', unsafe_allow_html=True):
         if url1 and url2:
             try:
                 # Fetch and process content from both URLs
@@ -72,15 +110,17 @@ def main():
                 # Display results
                 if common_keywords:
                     df = pd.DataFrame(common_keywords)
-                    st.dataframe(df)
                     
-                    # Button to copy results to clipboard
-                    st.download_button(
-                        label="Download Results",
-                        data=df.to_csv(index=False),
-                        file_name="results.csv",
-                        mime="text/csv"
-                    )
+                    # Convert DataFrame to CSV
+                    csv = df.to_csv(index=False).encode('utf-8')
+                    b64 = base64.b64encode(csv).decode('utf-8')
+                    href = f'<a href="data:file/csv;base64,{b64}" download="results.csv" class="download-button">Download Results</a>'
+                    
+                    # Center the button and display it
+                    st.markdown(f'<div class="center">{href}</div>', unsafe_allow_html=True)
+                    
+                    # Display the DataFrame
+                    st.dataframe(df)
                 else:
                     st.write("No common keywords found.")
                 
