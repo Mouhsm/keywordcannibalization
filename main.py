@@ -50,7 +50,6 @@ def analyze_cannibalization(keywords1, keywords2):
     return common_keywords
 
 def main():
-    st.title("Keyword Cannibalization Analyzer")
 
     # Inject custom CSS to hide Streamlit menu and footer, and style the buttons
     st.markdown("""
