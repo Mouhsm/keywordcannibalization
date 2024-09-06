@@ -9,6 +9,13 @@ import nltk
 import pandas as pd
 import base64
 
+# Inject custom CSS to hide Streamlit footer, menu, and header and center the download button
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
 # Download NLTK resources if not already downloaded
 nltk.download('punkt')
 nltk.download('stopwords')
