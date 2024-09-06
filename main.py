@@ -50,6 +50,14 @@ def analyze_cannibalization(keywords1, keywords2):
     return common_keywords
 
 def main():
+     # Inject custom CSS to set the background color
+    st.markdown("""
+        <style>
+        body {
+            background-color: #f7f7f7
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # Inject custom CSS to hide Streamlit menu and footer, and style the buttons
     st.markdown("""
