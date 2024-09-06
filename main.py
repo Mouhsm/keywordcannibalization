@@ -23,18 +23,14 @@ def extract_keywords(text, num_keywords=10, n=3):
     # Tokenize and remove stop words
     stop_words = set(stopwords.words('english'))
     words = word_tokenize(text.lower())
-    
-    # Improved token filtering to handle punctuation better
     filtered_words = [word for word in words if word.isalnum() and word not in stop_words]
     
     # Extract n-grams
     n_grams = ngrams(filtered_words, n)
     n_gram_freq = Counter([' '.join(gram) for gram in n_grams])
     
-    # Sort and get the most common n-grams
-    most_common_ngrams = n_gram_freq.most_common(num_keywords)
-    
-    return most_common_ngrams
+    # Get the most common n-grams
+    return n_gram_freq.most_common(num_keywords)
 
 def analyze_cannibalization(keywords1, keywords2):
     """Check for keyword cannibalization between two sets of keywords, including frequencies."""
