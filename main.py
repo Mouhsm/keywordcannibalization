@@ -6,9 +6,10 @@ from nltk.tokenize import word_tokenize
 from nltk.util import ngrams
 from collections import Counter
 import nltk
+import pandas as pd
 
 # Download NLTK resources if not already downloaded
-nltk.download('punkt_tab')
+nltk.download('punkt')
 nltk.download('stopwords')
 
 def fetch_content(url):
@@ -36,10 +37,14 @@ def analyze_cannibalization(keywords1, keywords2):
     keywords1_dict = dict(keywords1)
     keywords2_dict = dict(keywords2)
     
-    common_keywords = {}
+    common_keywords = []
     for keyword in keywords1_dict:
         if keyword in keywords2_dict:
-            common_keywords[keyword] = (keywords1_dict[keyword], keywords2_dict[keyword])
+            common_keywords.append({
+                "Keyword": keyword,
+                "Count in URL 1": keywords1_dict[keyword],
+                "Count in URL 2": keywords2_dict[keyword]
+            })
     
     return common_keywords
 
@@ -57,36 +62,27 @@ def main():
                 content1 = fetch_content(url1)
                 content2 = fetch_content(url2)
                 
-                st.write("Content from URL 1 (first 500 chars):", content1[:500])
-                st.write("Content from URL 2 (first 500 chars):", content2[:500])
-                
                 # Extract keywords
                 keywords1 = extract_keywords(content1)
                 keywords2 = extract_keywords(content2)
-                
-                st.write("Keywords from URL 1:", keywords1)
-                st.write("Keywords from URL 2:", keywords2)
                 
                 # Analyze cannibalization
                 common_keywords = analyze_cannibalization(keywords1, keywords2)
                 
                 # Display results
                 if common_keywords:
-                    result_text = "Common Keywords:\n"
-                    for keyword, (count1, count2) in common_keywords.items():
-                        result_text += f"{keyword}: Found {count1} times in URL 1, {count2} times in URL 2\n"
+                    df = pd.DataFrame(common_keywords)
+                    st.dataframe(df)
+                    
+                    # Button to copy results to clipboard
+                    st.download_button(
+                        label="Copy Results to Clipboard",
+                        data=df.to_csv(index=False),
+                        file_name="results.csv",
+                        mime="text/csv"
+                    )
                 else:
-                    result_text = "No common keywords found."
-                
-                st.text_area("Results", result_text, height=300)
-                
-                # Button to copy results
-                st.download_button(
-                    label="Copy Results to Clipboard",
-                    data=result_text,
-                    file_name="results.txt",
-                    mime="text/plain"
-                )
+                    st.write("No common keywords found.")
                 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
