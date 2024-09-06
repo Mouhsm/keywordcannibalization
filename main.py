@@ -1,52 +1,5 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.util import ngrams
-from collections import Counter
-import nltk
 import pandas as pd
-
-# Download NLTK resources if not already downloaded
-nltk.download('punkt_tab')
-nltk.download('stopwords')
-
-def fetch_content(url):
-    """Fetch the content of a web page and return the text."""
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    return soup.get_text()
-
-def extract_keywords(text, num_keywords=10, n=3):
-    """Extract n-grams as keywords from text, ignoring common stop words."""
-    # Tokenize and remove stop words
-    stop_words = set(stopwords.words('english'))
-    words = word_tokenize(text.lower())
-    filtered_words = [word for word in words if word.isalnum() and word not in stop_words]
-    
-    # Extract n-grams
-    n_grams = ngrams(filtered_words, n)
-    n_gram_freq = Counter([' '.join(gram) for gram in n_grams])
-    
-    # Get the most common n-grams
-    return n_gram_freq.most_common(num_keywords)
-
-def analyze_cannibalization(keywords1, keywords2):
-    """Check for keyword cannibalization between two sets of keywords, including frequencies."""
-    keywords1_dict = dict(keywords1)
-    keywords2_dict = dict(keywords2)
-    
-    common_keywords = []
-    for keyword in keywords1_dict:
-        if keyword in keywords2_dict:
-            common_keywords.append({
-                "Keyword": keyword,
-                "Count in URL 1": keywords1_dict[keyword],
-                "Count in URL 2": keywords2_dict[keyword]
-            })
-    
-    return common_keywords
 
 def main():
     st.title("Keyword Cannibalization Analyzer")
@@ -55,7 +8,33 @@ def main():
     url1 = st.text_input("Enter the first URL:")
     url2 = st.text_input("Enter the second URL:")
 
-    if st.button("Check Cannibalization"):
+    # Add custom CSS for the button
+    st.markdown(
+        """
+        <style>
+        .check-button {
+            background-color: #007bff; /* Blue color */
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        .check-button:hover {
+            background-color: #0056b3; /* Darker blue */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Button with custom styling
+    if st.button("Check Cannibalization", key="check_cannibalization"):
         if url1 and url2:
             try:
                 # Fetch and process content from both URLs
@@ -69,18 +48,44 @@ def main():
                 # Analyze cannibalization
                 common_keywords = analyze_cannibalization(keywords1, keywords2)
                 
-                # Display results
+                # Display download button with custom CSS
                 if common_keywords:
                     df = pd.DataFrame(common_keywords)
+                    
+                    # Create a custom HTML button for downloading
+                    csv_data = df.to_csv(index=False).encode().decode('utf-8').replace('\n', '%0A').replace('\r', '%0D')
+                    
+                    st.markdown(
+                        f"""
+                        <style>
+                        .container {{
+                            text-align: center;
+                            margin: 20px 0;
+                        }}
+                        .download-button {{
+                            background-color: orange;
+                            color: white;
+                            padding: 10px 20px;
+                            text-align: center;
+                            text-decoration: none;
+                            display: inline-block;
+                            font-size: 16px;
+                            margin: 10px 2px;
+                            cursor: pointer;
+                            border: none;
+                            border-radius: 5px;
+                        }}
+                        </style>
+                        <div class="container">
+                            <a href="data:file/csv;base64,{csv_data}" download="results.csv" class="download-button">Download Results</a>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Display the table
                     st.dataframe(df)
                     
-                    # Button to copy results to clipboard
-                    st.download_button(
-                        label="Download Results",
-                        data=df.to_csv(index=False),
-                        file_name="results.csv",
-                        mime="text/csv"
-                    )
                 else:
                     st.write("No common keywords found.")
                 
@@ -88,6 +93,19 @@ def main():
                 st.error(f"An error occurred: {e}")
         else:
             st.warning("Please enter both URLs.")
+
+# Placeholder functions for demonstration
+def fetch_content(url):
+    # Simulated content fetch (replace with actual implementation)
+    return "Sample content from " + url
+
+def extract_keywords(content):
+    # Simulated keyword extraction (replace with actual implementation)
+    return ["keyword1", "keyword2"]
+
+def analyze_cannibalization(keywords1, keywords2):
+    # Simulated cannibalization analysis (replace with actual implementation)
+    return [kw for kw in keywords1 if kw in keywords2]
 
 if __name__ == "__main__":
     main()
