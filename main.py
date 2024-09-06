@@ -111,6 +111,9 @@ def main():
                 if common_keywords:
                     df = pd.DataFrame(common_keywords)
                     
+                    # Convert DataFrame to HTML without the index
+                    df_html = df.to_html(index=False)
+                    
                     # Convert DataFrame to CSV
                     csv = df.to_csv(index=False).encode('utf-8')
                     b64 = base64.b64encode(csv).decode('utf-8')
@@ -119,8 +122,8 @@ def main():
                     # Center the button and display it
                     st.markdown(f'<div class="center">{href}</div>', unsafe_allow_html=True)
                     
-                    # Display the DataFrame
-                    st.dataframe(df)
+                    # Display the DataFrame without index column
+                    st.markdown(df_html, unsafe_allow_html=True)
                 else:
                     st.write("No common keywords found.")
                 
