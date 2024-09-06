@@ -75,13 +75,24 @@ def main():
                     df = pd.DataFrame(common_keywords)
                     st.dataframe(df)
                     
-                    # Button to copy results to clipboard
+                    # Centered and styled download button
+                    st.markdown("""
+                        <style>
+                        .download-button {
+                            display: flex;
+                            justify-content: center;
+                        }
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown('<div class="download-button">', unsafe_allow_html=True)
                     st.download_button(
                         label="Download Results",
                         data=df.to_csv(index=False),
                         file_name="results.csv",
                         mime="text/csv"
                     )
+                    st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.write("No common keywords found.")
                 
