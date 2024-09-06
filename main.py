@@ -76,7 +76,7 @@ def main():
                     
                     # Button to copy results to clipboard
                     st.download_button(
-                        label="Copy Results to Clipboard",
+                        label="Download Results",
                         data=df.to_csv(index=False),
                         file_name="results.csv",
                         mime="text/csv"
