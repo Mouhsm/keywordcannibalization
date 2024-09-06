@@ -10,7 +10,7 @@ import pandas as pd
 import base64
     
 # Download NLTK resources if not already downloaded
-nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 
 def fetch_content(url):
