@@ -55,7 +55,6 @@ def main():
     url1 = st.text_input("Enter the first URL:")
     url2 = st.text_input("Enter the second URL:")
 
-    # Check if URLs are provided
     if st.button("Check Cannibalization"):
         if url1 and url2:
             try:
@@ -75,24 +74,13 @@ def main():
                     df = pd.DataFrame(common_keywords)
                     st.dataframe(df)
                     
-                    # Centered and styled download button
-                    st.markdown("""
-                        <style>
-                        .download-button {
-                            display: flex;
-                            justify-content: center;
-                        }
-                        </style>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown('<div class="download-button">', unsafe_allow_html=True)
+                    # Button to copy results to clipboard
                     st.download_button(
                         label="Download Results",
                         data=df.to_csv(index=False),
                         file_name="results.csv",
                         mime="text/csv"
                     )
-                    st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.write("No common keywords found.")
                 
@@ -100,9 +88,6 @@ def main():
                 st.error(f"An error occurred: {e}")
         else:
             st.warning("Please enter both URLs.")
-    else:
-        # Display a placeholder message when the button has not been pressed yet
-        st.write("Enter URLs and press the button to check for keyword cannibalization.")
 
 if __name__ == "__main__":
     main()
